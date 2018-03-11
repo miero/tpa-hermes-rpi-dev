@@ -12,3 +12,14 @@ make install
 echo "dtoverlay=tpa-hermes-rpi" >> /boot/config.txt
 
 ### reboot
+reboot
+
+### verify that the driver is loaded
+
+$ aplay -l
+**** List of PLAYBACK Hardware Devices ****
+...
+card 1: sndtpahermesrpi [snd_tpa_hermes_rpi], device 0: TPA-Hermes-RPi HiFi tpa-hermes-rpi-dai-0 []
+  Subdevices: 1/1
+  Subdevice #0: subdevice #0
+
