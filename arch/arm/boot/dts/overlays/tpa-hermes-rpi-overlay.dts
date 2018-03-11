@@ -1,0 +1,39 @@
+// Definitions for TPA Hermes-RPi
+/dts-v1/;
+/plugin/;
+
+/ {
+	compatible = "brcm,bcm2708";
+
+	fragment@0 {
+		target = <&i2s>;
+		__overlay__ {
+			status = "okay";
+		};
+	};
+
+	fragment@1 {
+		target-path = "/";
+		__overlay__ {
+			tpa-hermes-rpi-codec {
+				#sound-dai-cells = <0>;
+				compatible = "tpa,tpa-hermes-rpi-codec";
+				status = "okay";
+			};
+		};
+	};
+
+	fragment@2 {
+		target = <&sound>;
+		tpa_hermes_rpi: __overlay__ {
+			compatible = "tpa,tpa-hermes-rpi";
+			mult-gpios = <&gpio 27 0>, <&gpio 22 0>, <&gpio 23 0>, <&gpio 24 0>;
+			i2s-controller = <&i2s>;
+			status = "okay";
+		};
+	};
+
+	__overrides__ {
+		max192 = <&tpa_hermes_rpi>,"tpa-hermes-rpi,max192?";
+	};
+};
