@@ -21,6 +21,7 @@ git pull
 ```
 make clean
 make install
+depmod -A
 ```
 ### (first time only on most RPi distros) append loading tpa-hermes-rpi overlay into config.txt
 ```
