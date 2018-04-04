@@ -14,14 +14,14 @@ else
 
 # normal makefile
 export KDIR ?= /lib/modules/`uname -r`/build
+export INSTALL_MOD_DIR ?= kernel
 
 build:
 	$(MAKE) -C $(KDIR) M=$$PWD
 
 install: build
-	$(MAKE) -C $(KDIR) M=$$PWD INSTALL_MOD_DIR=kernel/sound/soc/bcm modules_install
+	$(MAKE) -C $(KDIR) M=$$PWD modules_install
 	cp -f arch/arm/boot/dts/overlays/tpa-hermes-rpi.dtbo /boot/overlays
-	depmod -A
 
 clean:
 	$(MAKE) -C $(KDIR) M=$$PWD clean
