@@ -109,16 +109,18 @@ static int snd_tpa_hermes_rpi_hw_params(struct snd_pcm_substream *substream,
 static int tpa_hermes_rpi_trigger(struct snd_pcm_substream *substream,
                                   int cmd)
 {
-	int mult[4];
+	int mult[5];
 	mult[0] = 0;
 	mult[1] = 0;
 	mult[2] = 0;
 	mult[3] = 0;
+	mult[4] = 0;
 
 	switch (cmd) {
 	case SNDRV_PCM_TRIGGER_START:
 	case SNDRV_PCM_TRIGGER_RESUME:
 	case SNDRV_PCM_TRIGGER_PAUSE_RELEASE:
+		mult[4] = 1;
 		switch (tpa_hermes_rpi_rate) {
 		case 384000:
 			mult[0] = 1;

@@ -27,7 +27,7 @@
 		target = <&sound>;
 		tpa_hermes_rpi: __overlay__ {
 			compatible = "tpa,tpa-hermes-rpi";
-			mult-gpios = <&gpio 27 0>, <&gpio 22 0>, <&gpio 23 0>, <&gpio 24 0>;
+			mult-gpios = <&gpio 27 0>, <&gpio 22 0>, <&gpio 23 0>, <&gpio 24 0>, <&gpio 25 0>;
 			i2s-controller = <&i2s>;
 			status = "okay";
 		};
