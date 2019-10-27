@@ -20,9 +20,12 @@
 #include <linux/module.h>
 #include <linux/platform_device.h>
 
+#include <sound/core.h>
 #include <sound/soc.h>
 
-static struct snd_soc_codec_driver tpa_hermes_rpi_codec;
+static const struct snd_soc_component_driver tpa_hermes_rpi_codec_comp = {
+	.name = "tpa-hermes-rpi-codec-comp"
+};
 
 static struct snd_soc_dai_driver tpa_hermes_rpi_dai = {
 	.name = "tpa-hermes-rpi-dai",
@@ -38,13 +41,13 @@ static struct snd_soc_dai_driver tpa_hermes_rpi_dai = {
 
 static int tpa_hermes_rpi_probe(struct platform_device *pdev)
 {
-	return snd_soc_register_codec(&pdev->dev, &tpa_hermes_rpi_codec,
+	return devm_snd_soc_register_component(&pdev->dev, &tpa_hermes_rpi_codec_comp,
 	                              &tpa_hermes_rpi_dai, 1);
 }
 
 static int tpa_hermes_rpi_remove(struct platform_device *pdev)
 {
-	snd_soc_unregister_codec(&pdev->dev);
+	snd_soc_unregister_component(&pdev->dev);
 	return 0;
 }
 
