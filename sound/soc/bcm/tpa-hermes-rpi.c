@@ -109,53 +109,55 @@ static int snd_tpa_hermes_rpi_hw_params(struct snd_pcm_substream *substream,
 static int tpa_hermes_rpi_trigger(struct snd_pcm_substream *substream,
                                   int cmd)
 {
-	int mult[5];
-	mult[0] = 0;
-	mult[1] = 0;
-	mult[2] = 0;
-	mult[3] = 0;
-	mult[4] = 0;
+	DECLARE_BITMAP(mult, 5);
+
+	memset(mult, 0, sizeof(mult));
 
 	switch (cmd) {
 	case SNDRV_PCM_TRIGGER_START:
 	case SNDRV_PCM_TRIGGER_RESUME:
 	case SNDRV_PCM_TRIGGER_PAUSE_RELEASE:
-		mult[4] = 1;
+	{
+		__assign_bit(4, mult, 1);
+		if ((tpa_hermes_rpi_rate % 48000) == 0) {
+			__assign_bit(0, mult, 1);
+		}
+
 		switch (tpa_hermes_rpi_rate) {
 		case 384000:
-			mult[0] = 1;
 		case 352800:
 			break;
 		case 192000:
-			mult[0] = 1;
 		case 176400:
-			mult[1] = 1;
+			__assign_bit(1, mult, 1);
 			break;
 		case 96000:
-			mult[0] = 1;
 		case 88200:
-			mult[1] = 1;
-			mult[2] = 1;
+			__assign_bit(1, mult, 1);
+			__assign_bit(2, mult, 1);
 			break;
 		case 48000:
-			mult[0] = 1;
 		case 44100:
-			mult[2] = 1;
-			mult[3] = 1;
+			__assign_bit(2, mult, 1);
+			__assign_bit(3, mult, 1);
 			break;
 		default:
 			return -EINVAL;
 		}
+		break;
+	}
 	case SNDRV_PCM_TRIGGER_STOP:
 	case SNDRV_PCM_TRIGGER_SUSPEND:
 	case SNDRV_PCM_TRIGGER_PAUSE_PUSH:
-		gpiod_set_array_value_cansleep(mult_gpios->ndescs, 
-		                               mult_gpios->desc,
-		                               mult);
 		break;
 	default:
 		return -EINVAL;
 	}
+
+	gpiod_set_array_value_cansleep(mult_gpios->ndescs, 
+				       mult_gpios->desc,
+				       mult_gpios->info,
+				       mult);
 
 	return 0;
 }
@@ -168,18 +170,20 @@ static struct snd_soc_ops snd_tpa_hermes_rpi_ops = {
 	.trigger = tpa_hermes_rpi_trigger,
 };
 
+SND_SOC_DAILINK_DEFS(tpa_hermes_rpi,
+	DAILINK_COMP_ARRAY(COMP_CPU("bcm2708-i2s.0")),
+	DAILINK_COMP_ARRAY(COMP_CODEC("tpa-hermes-rpi-codec", "tpa-hermes-rpi-dai")),
+	DAILINK_COMP_ARRAY(COMP_PLATFORM("bcm2708-i2s.0")));
+
 static struct snd_soc_dai_link snd_tpa_hermes_rpi_dai[] = {
 	{
 		.name		= "TPA-Hermes-RPi",
 		.stream_name	= "TPA-Hermes-RPi HiFi",
-		.cpu_dai_name	= "bcm2708-i2s.0",
-		.codec_dai_name	= "tpa-hermes-rpi-dai",
-		.platform_name	= "bcm2708-i2s.0",
-		.codec_name	= "tpa-hermes-rpi-codec",
 		.dai_fmt	= SND_SOC_DAIFMT_I2S | SND_SOC_DAIFMT_NB_NF |
 		SND_SOC_DAIFMT_CBM_CFS,
 		.ops		= &snd_tpa_hermes_rpi_ops,
 		.init		= snd_tpa_hermes_rpi_init,
+		SND_SOC_DAILINK_REG(tpa_hermes_rpi),
 	},
 };
 
@@ -202,22 +206,25 @@ static int snd_tpa_hermes_rpi_probe(struct platform_device *pdev)
 		struct snd_soc_dai_link *dai = &snd_tpa_hermes_rpi_dai[0];
 		i2s_node = of_parse_phandle(pdev->dev.of_node, "i2s-controller", 0);
 
-		mult_gpios = devm_gpiod_get_array_optional(&pdev->dev, "mult", GPIOD_OUT_LOW);
+		if (i2s_node) {
+			dai->cpus->dai_name = NULL;
+			dai->cpus->of_node = i2s_node;
+			dai->platforms->name = NULL;
+			dai->platforms->of_node = i2s_node;
+		} else {
+			dev_err(&pdev->dev, "i2s-controller missing or invalid in DT\n");
+			return -EINVAL;
+		}
+
+		mult_gpios = devm_gpiod_get_array(&pdev->dev, "mult", GPIOD_OUT_LOW);
 		if (IS_ERR(mult_gpios))
 			return PTR_ERR(mult_gpios);
-
-		if (i2s_node) {
-			dai->cpu_dai_name = NULL;
-			dai->cpu_of_node = i2s_node;
-			dai->platform_name = NULL;
-			dai->platform_of_node = i2s_node;
-		}
 
 		max192 = of_property_read_bool(pdev->dev.of_node, "tpa-hermes-rpi,max192");
 	}
 
 	ret = snd_soc_register_card(&snd_tpa_hermes_rpi);
-	if (ret)
+	if (ret && (ret != EPROBE_DEFER))
 		dev_err(&pdev->dev, "snd_soc_register_card() failed: %d\n", ret);
 
 	return ret;

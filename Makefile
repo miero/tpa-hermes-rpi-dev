@@ -21,7 +21,7 @@ build:
 
 install: build
 	$(MAKE) -C $(KDIR) M=$$PWD modules_install
-	cp -f arch/arm/boot/dts/overlays/tpa-hermes-rpi.dtbo /boot/overlays
+	cp -f arch/arm/boot/dts/overlays/tpa-hermes-rpi.dtbo /boot/firmware/overlays
 
 clean:
 	$(MAKE) -C $(KDIR) M=$$PWD clean
